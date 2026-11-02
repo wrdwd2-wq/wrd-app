@@ -7,11 +7,35 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; }
+        
+        /* Force Landscape orientation and set paper margins */
+        @page { 
+            size: landscape; 
+            margin: 10mm; 
+        }
+        
         @media print {
-            body { background: white !important; }
+            body { background: white !important; font-size: 10px !important; }
             .shadow { box-shadow: none !important; }
-            table { width: 100% !important; border-collapse: collapse !important; }
-            th, td { border: 1px solid #ccc !important; padding: 8px !important; }
+            
+            /* Remove scrollbars and minimum screen widths that cause clipping */
+            .overflow-x-auto { overflow: visible !important; }
+            table { 
+                width: 100% !important; 
+                min-width: 0 !important; 
+                border-collapse: collapse !important; 
+            }
+            
+            /* Add solid borders and force long text to wrap to the next line */
+            th, td { 
+                border: 1px solid #333 !important; 
+                padding: 4px 6px !important; 
+                word-wrap: break-word !important;
+                white-space: normal !important;
+            }
+            
+            /* Keep table header background colors visible on paper */
+            th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .print\:hidden { display: none !important; }
         }
     </style>
@@ -427,12 +451,12 @@
                 const errorDiv = document.getElementById('login-error');
 
                 if (user === 'ee' && pass === 'ee@123') currentUser = { name: 'Executive Engineer', role: 'Executive' };
-                else if (user === 'tech' && pass === 'tech@123') currentUser = { name: 'Smt. Vidhi. Dessai', role: 'Technical' };
-                else if (user === 'admin' && pass === 'admin@123') currentUser = { name: 'Smt. Cheryl Fernandes', role: 'Admin' };
-                else if (user === 'acc' && pass === 'accounts@123') currentUser = { name: 'Smt. Anuja Chindarkar', role: 'Accounts' };
-                else if (user === 'sub1' && pass === 'sub1@123') currentUser = { name: 'Sub Div I Officer', role: 'Sub Division I' };
-                else if (user === 'sub2' && pass === 'sub2@123') currentUser = { name: 'Sub Div II Officer', role: 'Sub Division II' };
-                else if (user === 'sub3' && pass === 'sub3@123') currentUser = { name: 'Sub Div III Officer', role: 'Sub Division III' };
+                else if (user === 'tech' && pass === 'tech@123') currentUser = { name: 'Assistant Surveyor of Works', role: 'Tech Section' };
+                else if (user === 'admin' && pass === 'admin@123') currentUser = { name: 'Smt. Cheryl Fernandes', role: 'Adm Section' };
+                else if (user === 'accounts' && pass === 'accounts@123') currentUser = { name: 'Smt. Anuja Chindarkar', role: 'Accts Section' };
+                else if (user === 'sub1' && pass === 'sub1@123') currentUser = { name: 'Assistant Engineer', role: 'Sub Div I' };
+                else if (user === 'sub2' && pass === 'sub2@123') currentUser = { name: 'Assistant Engineer', role: 'Sub Div II' };
+                else if (user === 'sub3' && pass === 'sub3@123') currentUser = { name: 'Assistant Engineer', role: 'Sub Div III' };
                 else {
                     errorDiv.classList.remove('hidden');
                     return;

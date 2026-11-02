@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Works Division II, WRD - File Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; }
+        @media print {
+            body { background: white !important; }
+            .shadow { box-shadow: none !important; }
+            table { width: 100% !important; border-collapse: collapse !important; }
+            th, td { border: 1px solid #ccc !important; padding: 8px !important; }
+            .print\:hidden { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex flex-col relative">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="flex flex-1 items-center justify-center bg-blue-900 absolute inset-0 z-50 print:hidden">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-[450px]">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold text-blue-800">Works Division II, WRD, Rawanfond Goa</h1>
+                <p class="text-sm text-slate-500 mt-1">e-File Tracking System</p>
+            </div>
+            
+            <div id="login-error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm">
+                Invalid username or password.
+            </div>
+
+            <form id="login-form" onsubmit="event.preventDefault(); handleLogin(); return false;">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Username</label>
+                    <input type="text" id="username" class="w-full border border-slate-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="ee, tech, admin, acc, sub1, sub2, sub3" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="password" class="w-full border border-slate-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="p" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">
+                    Secure Login
+                </button>
+            </form>
+            <div class="mt-4 text-xs text-center text-slate-400">
+                Logins: <b>ee</b> | <b>admin</b> | <b>tech</b> | <b>acc</b> | <b>sub1</b> | <b>sub2</b> | <b>sub3</b><br>(Password for all: p)
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW FILE MODAL -->
+    <div id="new-file-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center print:hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-96">
+            <h2 class="text-lg font-bold text-slate-800 mb-4">Inward New File</h2>
+            <form id="new-file-form" onsubmit="event.preventDefault(); submitNewFile(); return false;">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Date</label>
+                    <input type="date" id="manual-date" class="w-full border border-slate-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Initial Inward No.</label>
+                    <input type="text" id="manual-inward-no" class="w-full border border-slate-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Subject</label>
+                    <textarea id="manual-subject" rows="3" class="w-full border border-slate-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Enter file subject or description..." required></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('new-file-modal')" class="px-4 py-2 border border-slate-300 rounded text-slate-600 hover:bg-slate-100 transition">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Inward File</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT / CORRECT FILE MODAL -->
+    <div id="edit-file-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center print:hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-[550px] max-h-[90vh] flex flex-col">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">✏️ Correct File Details</h2>
+            <input type="hidden" id="edit-file-id">
+            
+            <div class="flex-1 overflow-y-auto pr-2">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Subject / Description</label>
+                    <textarea id="edit-subject" rows="2"></textarea>
+                    <p id="edit-subject-warning" class="text-[10px] text-orange-600 font-bold mt-1 hidden">Only the section that initiated this file can edit the subject.</p>
+                </div>
+                
+                <div id="edit-inward-container" class="mb-4 bg-slate-50 p-3 rounded border border-slate-200">
+                    <!-- Dynamic Inward Inputs -->
+                </div>
+                
+                <div id="edit-outward-container" class="mb-4 bg-blue-50/50 p-3 rounded border border-blue-100">
+                    <!-- Dynamic Outward Inputs with Remarks -->
+                </div>
+            </div>
+            
+            <div class="mt-4 pt-4 border-t flex justify-end gap-2">
+                <button type="button" onclick="closeModal('edit-file-modal')" class="px-4 py-2 border border-slate-300 rounded text-slate-600 hover:bg-slate-100 transition">Cancel</button>
+                <button type="button" onclick="saveFileCorrections()" class="px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition">Save Corrections</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW LETTER (OUTWARD) MODAL -->
+    <div id="new-letter-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center print:hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-96">
+            <h2 class="text-lg font-bold text-slate-800 mb-4">Outward New Letter</h2>
+            <form id="new-letter-form" onsubmit="event.preventDefault(); submitNewLetter(); return false;">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Dispatch Date</label>
+                    <input type="date" id="letter-date" class="w-full border border-slate-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Letter / Ref No.</label>
+                    <input type="text" id="letter-no" class="w-full border border-slate-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Addressed To</label>
+                    <select id="letter-to-select" class="w-full border border-slate-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" onchange="toggleLetterManualInput(this)" required>
+                        <option value="">-- Select Addressee --</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Technical">Technical</option>
+                        <option value="Accounts">Accounts</option>
+                        <option value="Sub Division I">Sub Div I</option>
+                        <option value="Sub Division II">Sub Div II</option>
+                        <option value="Sub Division III">Sub Div III</option>
+                        <option value="External">External (Panchayat, Public, etc.)...</option>
+                    </select>
+                    <!-- Hidden manual input for external addresses -->
+                    <input type="text" id="letter-to-manual" class="hidden w-full border border-slate-300 p-2 mt-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g., Village Panchayat Rawanfond">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Subject</label>
+                    <textarea id="letter-subject" rows="2" class="w-full border border-slate-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Enter letter subject..." required></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('new-letter-modal')" class="px-4 py-2 border border-slate-300 rounded text-slate-600 hover:bg-slate-100 transition">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">Dispatch Letter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- HISTORY MODAL -->
+    <div id="history-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center print:hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-[600px] max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h2 class="text-lg font-bold text-slate-800">Routing History</h2>
+                <button onclick="closeModal('history-modal')" class="text-slate-500 hover:text-slate-800 font-bold text-xl">&times;</button>
+            </div>
+            <div class="mb-4">
+                <div class="flex gap-8">
+                    <div>
+                        <p class="text-[10px] uppercase text-slate-400 font-bold mb-1">Inward Nos:</p>
+                        <div id="history-inward-nos" class="font-mono text-blue-700 font-bold mb-2"></div>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase text-slate-400 font-bold mb-1">Outward Nos:</p>
+                        <div id="history-outward-nos" class="font-mono text-purple-700 font-bold mb-2"></div>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-500 font-bold mt-2">Subject:</p>
+                <p class="text-slate-700" id="history-subject"></p>
+            </div>
+            <div class="flex-1 overflow-y-auto bg-slate-50 p-4 rounded border border-slate-200">
+                <ul class="relative border-l border-slate-300 ml-3" id="history-timeline">
+                    <!-- History gets injected here -->
+                </ul>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button onclick="closeModal('history-modal')" class="px-4 py-2 bg-slate-200 text-slate-700 font-bold rounded hover:bg-slate-300 transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN -->
+    <div id="app-screen" class="hidden flex-col h-full overflow-y-auto">
+        <header class="bg-blue-800 text-white p-4 shadow-md flex justify-between items-center sticky top-0 z-30 print:hidden">
+            <div class="flex items-center gap-4">
+                <h1 class="text-xl font-bold tracking-wide">Works Division II, WRD, Rawanfond Goa</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm">User: <span id="current-user-role" class="font-bold text-yellow-300"></span></span>
+                <button onclick="handleLogout()" class="text-sm bg-blue-900 hover:bg-blue-950 px-3 py-1 rounded transition">Logout</button>
+            </div>
+        </header>
+
+        <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
+            <div class="flex gap-6 border-b border-slate-300 mb-6 print:hidden">
+                <button id="tab-files" onclick="switchView('files')" class="pb-2 border-b-4 border-blue-600 font-bold text-blue-800 text-lg transition">Inward / Outward</button>
+                <button id="tab-letters" onclick="switchView('letters')" class="pb-2 border-b-4 border-transparent font-bold text-slate-500 hover:text-slate-700 text-lg transition">Dispatch Letters</button>
+            </div>
+
+            <!-- FILES VIEW -->
+            <div id="view-files">
+                
+                <!-- DASHBOARD STATS -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8 print:hidden" id="dashboard-stats-container">
+                    <div id="stat-box-tech" class="bg-white p-4 rounded-lg shadow border-t-4 border-t-blue-500">
+                        <h2 class="text-sm text-slate-500 font-bold uppercase">Technical</h2>
+                        <p class="text-3xl font-bold text-slate-800 mt-2" id="tech-count">0</p>
+                    </div>
+                    <div id="stat-box-admin" class="bg-white p-4 rounded-lg shadow border-t-4 border-t-purple-500">
+                        <h2 class="text-sm text-slate-500 font-bold uppercase">Admin</h2>
+                        <p class="text-3xl font-bold text-slate-800 mt-2" id="admin-count">0</p>
+                    </div>
+                    <div id="stat-box-acc" class="bg-white p-4 rounded-lg shadow border-t-4 border-t-green-500">
+                        <h2 class="text-sm text-slate-500 font-bold uppercase">Accounts</h2>
+                        <p class="text-3xl font-bold text-slate-800 mt-2" id="acc-count">0</p>
+                    </div>
+                    <div id="stat-box-sub1" class="bg-white p-4 rounded-lg shadow border-t-4 border-t-orange-500">
+                        <h2 class="text-sm text-slate-500 font-bold uppercase">Sub Div I</h2>
+                        <p class="text-3xl font-bold text-slate-800 mt-2" id="sub1-count">0</p>
+                    </div>
+                    <div id="stat-box-sub2" class="bg-white p-4 rounded-lg shadow border-t-4 border-t-teal-500">
+                        <h2 class="text-sm text-slate-500 font-bold uppercase">Sub Div II</h2>
+                        <p class="text-3xl font-bold text-slate-800 mt-2" id="sub2-count">0</p>
+                    </div>
+                    <div id="stat-box-sub3" class="bg-white p-4 rounded-lg shadow border-t-4 border-t-indigo-500">
+                        <h2 class="text-sm text-slate-500 font-bold uppercase">Sub Div III</h2>
+                        <p class="text-3xl font-bold text-slate-800 mt-2" id="sub3-count">0</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow overflow-hidden mb-10">
+                    <div class="p-4 bg-slate-100 border-b flex flex-wrap gap-4 justify-between items-center print:hidden">
+                        <h2 class="font-bold text-slate-700">Internal Files Log</h2>
+                        
+                        <div class="flex gap-3 items-center w-full sm:w-auto flex-wrap">
+                            <select id="ee-file-filter" onchange="renderFilesTable()" class="hidden border border-blue-400 rounded px-3 py-2 text-sm font-bold text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50">
+                                <option value="All">View All Sections</option>
+                                <option value="Technical">Filter: Technical Desk</option>
+                                <option value="Admin">Filter: Admin Desk</option>
+                                <option value="Accounts">Filter: Accounts Desk</option>
+                                <option value="Sub Division I">Filter: Sub Div I Desk</option>
+                                <option value="Sub Division II">Filter: Sub Div II Desk</option>
+                                <option value="Sub Division III">Filter: Sub Div III Desk</option>
+                            </select>
+
+                            <input type="text" id="search-input-files" oninput="renderFilesTable()" placeholder="Search by Inward No, Date, or Subject..." class="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64">
+                            <button onclick="window.print()" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-2 rounded text-sm font-medium transition">🖨️ Print</button>
+                            <button onclick="exportTableToCSV('files-table', 'WRD_Inward_Outward.csv')" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded text-sm font-medium transition">📊 Export to Excel</button>
+                            <button id="btn-new-file" onclick="openModal('new-file-modal')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium transition whitespace-nowrap">+ Initiate New File</button>
+                        </div>
+                    </div>
+                    
+                    <h2 class="hidden print:block text-2xl font-bold text-center py-4">Inward / Outward - Works Division II, WRD</h2>
+                    
+                    <div class="overflow-x-auto">
+                        <table id="files-table" class="w-full text-left border-collapse min-w-[1100px]">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-sm border-b">
+                                    <th class="p-4 font-medium">Inward Date</th>
+                                    <th class="p-4 font-medium">Inward No(s).</th>
+                                    <th class="p-4 font-medium">Subject</th>
+                                    <th class="p-4 font-medium bg-blue-50">Outward Date</th>
+                                    <th class="p-4 font-medium bg-blue-50">Outward No(s).</th>
+                                    <th class="p-4 font-medium bg-blue-50">Remarks</th>
+                                    <th class="p-4 font-medium">Current Desk</th>
+                                    <th class="p-4 font-medium">Status / Sent Date</th>
+                                    <th class="p-4 font-medium print:hidden">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="file-table-body" class="text-sm">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LETTERS VIEW -->
+            <div id="view-letters" class="hidden">
+                <div class="bg-white rounded-lg shadow overflow-hidden mb-10 border-t-4 border-green-500">
+                    <div class="p-4 bg-slate-100 border-b flex flex-wrap gap-4 justify-between items-center print:hidden">
+                        <h2 class="font-bold text-slate-700">Dispatch Letters Log</h2>
+                        <div class="flex gap-3 items-center w-full sm:w-auto flex-wrap">
+                            <select id="ee-letter-filter" onchange="renderLettersTable()" class="hidden border border-green-400 rounded px-3 py-2 text-sm font-bold text-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50">
+                                <option value="All">View All Dispatches</option>
+                                <option value="Technical">Filter: Technical Dispatches</option>
+                                <option value="Admin">Filter: Admin Dispatches</option>
+                                <option value="Accounts">Filter: Accounts Dispatches</option>
+                                <option value="Sub Division I">Filter: Sub Div I Dispatches</option>
+                                <option value="Sub Division II">Filter: Sub Div II Dispatches</option>
+                                <option value="Sub Division III">Filter: Sub Div III Dispatches</option>
+                            </select>
+
+                            <input type="text" id="search-input-letters" oninput="renderLettersTable()" placeholder="Search by Letter No, Addressee..." class="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-full sm:w-64">
+                            <button onclick="window.print()" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-2 rounded text-sm font-medium transition">🖨️ Print</button>
+                            <button onclick="exportTableToCSV('letters-table', 'WRD_Dispatch_Letters.csv')" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded text-sm font-medium transition">📊 Export to Excel</button>
+                            <button onclick="openModal('new-letter-modal')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium transition whitespace-nowrap">+ Dispatch Letter</button>
+                        </div>
+                    </div>
+
+                    <h2 class="hidden print:block text-2xl font-bold text-center py-4">Dispatch Letters - Works Division II, WRD</h2>
+
+                    <div class="overflow-x-auto">
+                        <table id="letters-table" class="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-sm border-b">
+                                    <th class="p-4 font-medium">Dispatch Date</th>
+                                    <th class="p-4 font-medium">Letter / Ref No.</th>
+                                    <th class="p-4 font-medium">Addressed To</th>
+                                    <th class="p-4 font-medium">Subject</th>
+                                    <th class="p-4 font-medium">Dispatched By Section</th>
+                                    <th class="p-4 font-medium print:hidden">Status / Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="letter-table-body" class="text-sm">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let files = [];
+        let letters = [];
+        let currentTab = 'files';
+
+        function initLocalDatabase() {
+            const savedFiles = localStorage.getItem('wrd_files_demo_v19'); 
+            const savedLetters = localStorage.getItem('wrd_letters_demo_v8'); 
+
+            if (savedFiles) {
+                files = JSON.parse(savedFiles);
+            } else {
+                files = [
+                    { 
+                        id: 'F1690000001',
+                        inward_nos: { 'Sub Division I': 'WRD/SUB1/2026/012', 'Technical': 'WRD/TECH/2026/102' },
+                        outward_logs: [
+                            { desk: 'Sub Division I', date: '2026-10-28', no: 'OUT/SD1/45', to: 'Technical', remark: 'Forwarded for TS check' }
+                        ],
+                        inward_date: '2026-10-28', subject: 'Pump House Maintenance Estimate', 
+                        current_desk: 'Technical', status: 'File received from Sub Division I on 2026-10-28', 
+                        is_pending: false, sender_desk: '', 
+                        history: [
+                            { date: '2026-10-28 10:45', log: 'Physical file Accepted by Technical (Registered as Inward No: WRD/TECH/2026/102)' },
+                            { date: '2026-10-28 10:30', log: 'Dispatched internally to Technical by Sub Division I (Outward No: OUT/SD1/45, Remarks: Forwarded for TS check)' },
+                            { date: '2026-10-28 10:15', log: 'Inwarded & Marked to AE I (Initiated by Sub Division I as WRD/SUB1/2026/012)' }
+                        ] 
+                    }
+                ];
+            }
+            if (savedLetters) {
+                letters = JSON.parse(savedLetters);
+            } else {
+                letters = [];
+            }
+            saveToLocalDatabase();
+        }
+
+        function saveToLocalDatabase() {
+            localStorage.setItem('wrd_files_demo_v19', JSON.stringify(files));
+            localStorage.setItem('wrd_letters_demo_v8', JSON.stringify(letters));
+        }
+
+        // --- GLOBAL DUPLICATE CHECKERS ---
+        function isDuplicateInward(no, excludeFileId = null) {
+            if (!no) return false;
+            const searchStr = no.trim().toLowerCase();
+            return files.some(f => {
+                if (excludeFileId && f.id === excludeFileId) return false;
+                return Object.values(f.inward_nos).some(val => val.trim().toLowerCase() === searchStr);
+            });
+        }
+
+        function isDuplicateOutward(no, excludeFileId = null) {
+            if (!no) return false;
+            const searchStr = no.trim().toLowerCase();
+            const inFiles = files.some(f => {
+                if (excludeFileId && f.id === excludeFileId) return false;
+                if (f.outward_logs) {
+                    return f.outward_logs.some(log => log.no.trim().toLowerCase() === searchStr);
+                }
+                return false;
+            });
+            const inLetters = letters.some(l => l.letter_no.trim().toLowerCase() === searchStr);
+            return inFiles || inLetters;
+        }
+
+        function isDuplicateLetterNo(no, excludeLetterNo = null) {
+            if (!no) return false;
+            const searchStr = no.trim().toLowerCase();
+            const inLetters = letters.some(l => {
+                if (excludeLetterNo && l.letter_no === excludeLetterNo) return false;
+                return l.letter_no.trim().toLowerCase() === searchStr;
+            });
+            const inFiles = files.some(f => {
+                if (f.outward_logs) return f.outward_logs.some(log => log.no.trim().toLowerCase() === searchStr);
+                return false;
+            });
+            return inLetters || inFiles;
+        }
+
+        function switchView(viewName) {
+            currentTab = viewName;
+            const tabFiles = document.getElementById('tab-files');
+            const tabLetters = document.getElementById('tab-letters');
+            const viewFiles = document.getElementById('view-files');
+            const viewLetters = document.getElementById('view-letters');
+
+            if (viewName === 'files') {
+                tabFiles.className = "pb-2 border-b-4 border-blue-600 font-bold text-blue-800 text-lg transition";
+                tabLetters.className = "pb-2 border-b-4 border-transparent font-bold text-slate-500 hover:text-slate-700 text-lg transition";
+                viewFiles.classList.remove('hidden');
+                viewLetters.classList.add('hidden');
+            } else {
+                tabLetters.className = "pb-2 border-b-4 border-green-600 font-bold text-green-800 text-lg transition";
+                tabFiles.className = "pb-2 border-b-4 border-transparent font-bold text-slate-500 hover:text-slate-700 text-lg transition";
+                viewLetters.classList.remove('hidden');
+                viewFiles.classList.add('hidden');
+            }
+        }
+
+        function handleLogin() {
+            try {
+                const user = document.getElementById('username').value.toLowerCase();
+                const pass = document.getElementById('password').value;
+                const errorDiv = document.getElementById('login-error');
+
+                if (pass !== 'p') {
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                if (user === 'ee') currentUser = { name: 'Executive Engineer', role: 'Executive' };
+                else if (user === 'tech') currentUser = { name: 'Smt. Vidhi. Dessai', role: 'Technical' };
+                else if (user === 'admin') currentUser = { name: 'Smt. Cheryl Fernandes', role: 'Admin' };
+                else if (user === 'acc') currentUser = { name: 'Smt. Anuja Chindarkar', role: 'Accounts' };
+                else if (user === 'sub1') currentUser = { name: 'Sub Div I Officer', role: 'Sub Division I' };
+                else if (user === 'sub2') currentUser = { name: 'Sub Div II Officer', role: 'Sub Division II' };
+                else if (user === 'sub3') currentUser = { name: 'Sub Div III Officer', role: 'Sub Division III' };
+                else {
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('login-screen').classList.remove('flex');
+                document.getElementById('app-screen').classList.remove('hidden');
+                document.getElementById('app-screen').classList.add('flex');
+                
+                document.getElementById('current-user-role').innerText = currentUser.name + (currentUser.role !== 'Executive' ? ' (' + currentUser.role + ')' : '');
+                errorDiv.classList.add('hidden');
+                document.getElementById('login-form').reset();
+                
+                const canInitiateFile = currentUser.role !== 'Executive';
+                document.getElementById('btn-new-file').style.display = canInitiateFile ? 'block' : 'none';
+
+                if (currentUser.role === 'Executive') {
+                    document.getElementById('ee-file-filter').classList.remove('hidden');
+                    document.getElementById('ee-letter-filter').classList.remove('hidden');
+                } else {
+                    document.getElementById('ee-file-filter').classList.add('hidden');
+                    document.getElementById('ee-letter-filter').classList.add('hidden');
+                }
+
+                document.getElementById('ee-file-filter').value = 'All';
+                document.getElementById('ee-letter-filter').value = 'All';
+                document.getElementById('search-input-files').value = '';
+                document.getElementById('search-input-letters').value = '';
+
+                switchView('files');
+                initLocalDatabase();
+                renderFilesTable();
+                renderLettersTable();
+            } catch (err) {
+                alert("Login Error: " + err.message);
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('app-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('flex');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('login-screen').classList.add('flex');
+        }
+
+        function toggleLetterManualInput(select) {
+            const manualInput = document.getElementById('letter-to-manual');
+            if (select.value === 'External') {
+                manualInput.classList.remove('hidden');
+                manualInput.required = true;
+            } else {
+                manualInput.classList.add('hidden');
+                manualInput.required = false;
+                manualInput.value = '';
+            }
+        }
+
+        function exportTableToCSV(tableId, filename) {
+            const table = document.getElementById(tableId);
+            let csv = [];
+            const rows = table.querySelectorAll('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                let row = [];
+                let cols = rows[i].querySelectorAll('td, th');
+                
+                for (let j = 0; j < cols.length; j++) {
+                    if (tableId === 'files-table' && rows[0].querySelectorAll('th')[j] && rows[0].querySelectorAll('th')[j].innerText === 'Action') continue; 
+                    if (tableId === 'letters-table' && rows[0].querySelectorAll('th')[j] && rows[0].querySelectorAll('th')[j].innerText.includes('Action')) continue;
+                    
+                    let data = cols[j].innerText.replace(/"/g, '""'); 
+                    row.push('"' + data + '"');
+                }
+                csv.push(row.join(','));
+            }
+
+            const csvString = csv.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function getCurrentDateTime() {
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            return dateStr + ' ' + timeStr;
+        }
+
+        function getTodayDateString() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function renderFilesTable() {
+            const tbody = document.getElementById('file-table-body');
+            tbody.innerHTML = '';
+            
+            let techCount = 0, adminCount = 0, accCount = 0;
+            let sub1Count = 0, sub2Count = 0, sub3Count = 0;
+            const searchQuery = document.getElementById('search-input-files').value.toLowerCase();
+            const eeFilter = document.getElementById('ee-file-filter').value;
+
+            const statBoxes = [
+                { id: 'stat-box-tech', role: 'Technical' },
+                { id: 'stat-box-admin', role: 'Admin' },
+                { id: 'stat-box-acc', role: 'Accounts' },
+                { id: 'stat-box-sub1', role: 'Sub Division I' },
+                { id: 'stat-box-sub2', role: 'Sub Division II' },
+                { id: 'stat-box-sub3', role: 'Sub Division III' }
+            ];
+
+            statBoxes.forEach(box => {
+                const el = document.getElementById(box.id);
+                if (currentUser.role === 'Executive' || currentUser.role === box.role) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+
+            const visibleFiles = files.filter(file => {
+                if (currentUser.role === 'Executive') {
+                    if (eeFilter !== 'All' && file.current_desk !== eeFilter) return false;
+                    return true;
+                }
+                
+                if (file.current_desk === currentUser.role) return true;
+                if (file.history && file.history.some(h => h.log.includes(currentUser.role))) return true;
+                if (file.outward_logs && file.outward_logs.some(l => l.desk === currentUser.role)) return true;
+                
+                return false;
+            });
+
+            visibleFiles.forEach((file) => {
+                if (file.current_desk === 'Closed') return;
+                if (file.current_desk === 'Technical') techCount++;
+                if (file.current_desk === 'Admin') adminCount++;
+                if (file.current_desk === 'Accounts') accCount++;
+                if (file.current_desk === 'Sub Division I') sub1Count++;
+                if (file.current_desk === 'Sub Division II') sub2Count++;
+                if (file.current_desk === 'Sub Division III') sub3Count++;
+            });
+
+            const filteredFiles = visibleFiles.filter(file => {
+                if (file.current_desk === 'Closed') return false; 
+                
+                const matchesSubjectOrDate = file.inward_date.includes(searchQuery) || file.subject.toLowerCase().includes(searchQuery);
+                const matchesAnyInwardNo = Object.values(file.inward_nos).some(no => no.toLowerCase().includes(searchQuery));
+                
+                let matchesOutwardNo = false;
+                if (file.outward_logs) {
+                    matchesOutwardNo = file.outward_logs.some(log => log.no.toLowerCase().includes(searchQuery) || (log.remark && log.remark.toLowerCase().includes(searchQuery)));
+                }
+
+                return matchesSubjectOrDate || matchesAnyInwardNo || matchesOutwardNo;
+            });
+
+            const coreDesks = ['Technical', 'Admin', 'Accounts', 'Sub Division I', 'Sub Division II', 'Sub Division III'];
+
+            filteredFiles.forEach((file) => {
+                const isCoreDesk = coreDesks.includes(file.current_desk);
+                
+                let badgeColor = 
+                    file.current_desk === 'Technical' ? 'bg-blue-100 text-blue-800' : 
+                    file.current_desk === 'Admin' ? 'bg-purple-100 text-purple-800' : 
+                    file.current_desk === 'Accounts' ? 'bg-green-100 text-green-800' :
+                    file.current_desk === 'Sub Division I' ? 'bg-orange-100 text-orange-800' :
+                    file.current_desk === 'Sub Division II' ? 'bg-teal-100 text-teal-800' :
+                    file.current_desk === 'Sub Division III' ? 'bg-indigo-100 text-indigo-800' :
+                    'bg-slate-200 text-slate-800 border border-slate-300';
+
+                const canEdit = currentUser.role !== 'Executive' && ((currentUser.role === file.current_desk) || !isCoreDesk);
+                const formattedDate = file.inward_date ? file.inward_date.split('T')[0] : '';
+                
+                let actionHTML = '';
+                if (file.is_pending) {
+                    if (currentUser.role === file.current_desk) {
+                        actionHTML = `<button onclick="acceptFile('${file.id}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-bold w-full transition shadow-sm">✅ Accept File</button>`;
+                    } else if (currentUser.role === file.sender_desk) {
+                        actionHTML = `
+                            <span class="text-[10px] text-orange-600 font-bold block mb-1">⏳ In Transit to ${file.current_desk}</span>
+                            <button onclick="recallFile('${file.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-bold w-full transition shadow-sm">↩️ Recall Mistake</button>
+                        `;
+                    } else {
+                        actionHTML = `<span class="text-xs text-orange-600 font-bold italic px-2">⏳ In Transit to ${file.current_desk}</span>`;
+                    }
+                } else {
+                    if (canEdit) {
+                        actionHTML = `
+                        <select onchange="moveFile('${file.id}', this.value, this)" class="border border-slate-300 rounded p-1 text-sm bg-white w-full mb-1">
+                            <option value="">-- Route File --</option>
+                            <option value="Technical" ${file.current_desk === 'Technical' ? 'disabled' : ''}>Technical</option>
+                            <option value="Admin" ${file.current_desk === 'Admin' ? 'disabled' : ''}>Admin</option>
+                            <option value="Accounts" ${file.current_desk === 'Accounts' ? 'disabled' : ''}>Accounts</option>
+                            <option value="Sub Division I" ${file.current_desk === 'Sub Division I' ? 'disabled' : ''}>Sub Div I</option>
+                            <option value="Sub Division II" ${file.current_desk === 'Sub Division II' ? 'disabled' : ''}>Sub Div II</option>
+                            <option value="Sub Division III" ${file.current_desk === 'Sub Division III' ? 'disabled' : ''}>Sub Div III</option>
+                            <option value="Other">Other (Type manually)...</option>
+                            <option value="Closed">Mark as Closed</option>
+                        </select>
+                        <button onclick="openEditModal('${file.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded text-[10px] font-bold w-full transition shadow-sm border border-slate-300">✏️ Correct Details</button>
+                        `;
+                    } else {
+                        actionHTML = `<span class="text-xs text-slate-400 italic">View Only</span>`;
+                    }
+                }
+
+                let inwardHtml = '';
+                for (const [desk, no] of Object.entries(file.inward_nos)) {
+                    let shortDesk = desk.replace('Sub Division', 'SD').replace('Technical', 'Tech').replace('Accounts', 'Acc');
+                    inwardHtml += `<div class="mb-1 border-b border-slate-100 pb-1 last:border-0 last:pb-0"><span class="text-[10px] uppercase text-slate-400 font-bold">${shortDesk}:</span> <span class="font-bold text-blue-700">${no}</span></div>`;
+                }
+
+                let outwardDateHtml = '';
+                let outwardNoHtml = '';
+                let outwardRemarkHtml = ''; 
+
+                if (file.outward_logs && file.outward_logs.length > 0) {
+                    file.outward_logs.forEach(log => {
+                        let shortDesk = log.desk.replace('Sub Division', 'SD').replace('Technical', 'Tech').replace('Accounts', 'Acc');
+                        outwardDateHtml += `<div class="mb-1 border-b border-blue-100 pb-1 last:border-0 last:pb-0 whitespace-nowrap"><span class="text-[10px] uppercase text-slate-400 font-bold">${shortDesk}:</span> <span class="font-bold text-slate-600">${log.date}</span></div>`;
+                        outwardNoHtml += `<div class="mb-1 border-b border-blue-100 pb-1 last:border-0 last:pb-0 whitespace-nowrap"><span class="text-[10px] uppercase text-slate-400 font-bold">${shortDesk}:</span> <span class="font-bold text-purple-700">${log.no || '-'}</span></div>`;
+                        outwardRemarkHtml += `<div class="mb-1 border-b border-blue-100 pb-1 last:border-0 last:pb-0"><span class="text-[10px] uppercase text-slate-400 font-bold">${shortDesk}:</span> <span class="text-xs text-slate-600">${log.remark || '-'}</span></div>`;
+                    });
+                } else {
+                    outwardDateHtml = '<span class="text-xs text-slate-400">-</span>';
+                    outwardNoHtml = '<span class="text-xs text-slate-400">-</span>';
+                    outwardRemarkHtml = '<span class="text-xs text-slate-400">-</span>';
+                }
+                
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-slate-50 transition';
+                
+                tr.innerHTML = `
+                    <td class="p-4 text-slate-600 font-medium">${formattedDate}</td>
+                    
+                    <td class="p-4 font-mono whitespace-nowrap cursor-pointer hover:bg-blue-50" onclick="viewHistory('${file.id}')" title="Click to view routing history">
+                        ${inwardHtml}
+                    </td>
+                    
+                    <td class="p-4 text-slate-600">${file.subject}</td>
+                    
+                    <td class="p-4 bg-blue-50/30">${outwardDateHtml}</td>
+                    <td class="p-4 font-mono bg-blue-50/30">${outwardNoHtml}</td>
+                    <td class="p-4 bg-blue-50/30 min-w-[120px]">${outwardRemarkHtml}</td>
+                    
+                    <td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${badgeColor}">${file.current_desk}</span></td>
+                    <td class="p-4 text-slate-600 font-semibold ${file.is_pending ? 'text-orange-600' : ''}">${file.status}</td>
+                    <td class="p-4 print:hidden align-top">${actionHTML}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('tech-count').innerText = techCount;
+            document.getElementById('admin-count').innerText = adminCount;
+            document.getElementById('acc-count').innerText = accCount;
+            document.getElementById('sub1-count').innerText = sub1Count;
+            document.getElementById('sub2-count').innerText = sub2Count;
+            document.getElementById('sub3-count').innerText = sub3Count;
+        }
+
+        function renderLettersTable() {
+            const tbody = document.getElementById('letter-table-body');
+            tbody.innerHTML = '';
+            const searchQuery = document.getElementById('search-input-letters').value.toLowerCase();
+            const eeFilter = document.getElementById('ee-letter-filter').value;
+            
+            const visibleLetters = letters.filter(letter => {
+                if (currentUser.role === 'Executive') {
+                    if (eeFilter !== 'All' && letter.dispatched_by !== eeFilter) return false;
+                    return true;
+                }
+                return letter.dispatched_by === currentUser.role || letter.receiver_desk === currentUser.role;
+            });
+
+            const filteredLetters = visibleLetters.filter(letter => {
+                return letter.letter_no.toLowerCase().includes(searchQuery) ||
+                       letter.addressed_to.toLowerCase().includes(searchQuery) ||
+                       letter.subject.toLowerCase().includes(searchQuery) ||
+                       letter.date.includes(searchQuery);
+            });
+
+            filteredLetters.forEach((letter) => {
+                let actionHTML = '';
+                if (letter.is_pending) {
+                    if (currentUser.role === letter.receiver_desk) {
+                        actionHTML = `<button onclick="acceptLetter('${letter.letter_no}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-bold transition shadow-sm whitespace-nowrap">✅ Accept Letter</button>`;
+                    } else {
+                        actionHTML = `<span class="text-xs text-orange-600 font-bold italic">⏳ In Transit to ${letter.receiver_desk}</span>`;
+                    }
+                } else {
+                    actionHTML = `<span class="text-xs text-slate-500 font-bold">✅ ${letter.status}</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-green-50 transition';
+                tr.innerHTML = `
+                    <td class="p-4 text-slate-600 font-medium">${letter.date}</td>
+                    <td class="p-4 font-mono font-medium text-slate-700 whitespace-nowrap">${letter.letter_no}</td>
+                    <td class="p-4 text-slate-800 font-bold">${letter.addressed_to}</td>
+                    <td class="p-4 text-slate-600">${letter.subject}</td>
+                    <td class="p-4"><span class="bg-slate-200 text-slate-700 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">${letter.dispatched_by}</span></td>
+                    <td class="p-4 print:hidden">${actionHTML}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function moveFile(targetId, newDesk, selectElement) {
+            if (!newDesk) return;
+            const fileIndex = files.findIndex(f => f.id === targetId);
+            if (fileIndex === -1) return;
+
+            let finalDesk = newDesk;
+            const coreDesks = ['Technical', 'Admin', 'Accounts', 'Sub Division I', 'Sub Division II', 'Sub Division III'];
+
+            if (newDesk === 'Other') {
+                const customDesk = prompt("Type the name of the desk or department you are sending this to (e.g., Office of SE I):");
+                if (!customDesk || customDesk.trim() === "") {
+                    selectElement.value = "";
+                    return;
+                }
+                finalDesk = customDesk.trim();
+            }
+
+            let outwardNo = prompt(`Enter your section's Outward/Dispatch No. to send this to ${finalDesk}\n(Leave blank if not applicable):`);
+            if (outwardNo === null) { 
+                selectElement.value = ""; 
+                return; 
+            }
+            
+            if (outwardNo && outwardNo.trim() !== '') {
+                if (isDuplicateOutward(outwardNo, targetId)) {
+                    alert(`Duplicate Error: The Outward No. "${outwardNo.trim()}" is already registered in the system.`);
+                    selectElement.value = ""; 
+                    return;
+                }
+            }
+
+            let outwardRemark = prompt(`Enter remarks for this dispatch (optional, e.g., 'TS Accorded', 'Report Drafted'):`);
+            if (outwardRemark === null) outwardRemark = '';
+
+            const dateTime = getCurrentDateTime();
+            const justDate = dateTime.split(' ')[0];
+            let statusText = '';
+            let historyLog = '';
+            
+            if(!files[fileIndex].outward_logs) files[fileIndex].outward_logs = [];
+            let outwardLogText = '';
+            
+            if (outwardNo.trim() !== '' || outwardRemark.trim() !== '') {
+                files[fileIndex].outward_logs.push({
+                    desk: currentUser.role,
+                    date: justDate,
+                    no: outwardNo.trim(),
+                    to: finalDesk,
+                    remark: outwardRemark.trim()
+                });
+                outwardLogText = ` (Outward No: ${outwardNo.trim() || 'N/A'}, Remarks: ${outwardRemark.trim() || 'None'})`;
+            }
+
+            if (finalDesk === 'Closed') {
+                if(!confirm('Close this file permanently?')) {
+                    selectElement.value = ""; 
+                    return;
+                }
+                statusText = 'Closed on ' + justDate;
+                historyLog = 'File marked as Closed by ' + currentUser.role + outwardLogText;
+                files[fileIndex].is_pending = false;
+            } 
+            else if (coreDesks.includes(finalDesk)) {
+                files[fileIndex].is_pending = true;
+                files[fileIndex].sender_desk = currentUser.role;
+                statusText = 'Physical file yet to be received in ' + finalDesk;
+                historyLog = 'Dispatched internally to ' + finalDesk + ' by ' + currentUser.role + outwardLogText;
+            } 
+            else {
+                files[fileIndex].is_pending = false;
+                statusText = 'Dispatched to ' + finalDesk + outwardLogText + ' on ' + justDate;
+                historyLog = 'Dispatched externally to ' + finalDesk + ' by ' + currentUser.role + outwardLogText;
+            }
+
+            files[fileIndex].current_desk = finalDesk;
+            files[fileIndex].status = statusText;
+            
+            if(!files[fileIndex].history) files[fileIndex].history = [];
+            files[fileIndex].history.unshift({ date: dateTime, log: historyLog });
+
+            saveToLocalDatabase();
+            renderFilesTable();
+        }
+
+        function recallFile(targetId) {
+            const fileIndex = files.findIndex(f => f.id === targetId);
+            if (fileIndex === -1) return;
+            
+            let f = files[fileIndex];
+            
+            if(confirm("Are you sure you want to recall this file back to your desk? This will cancel the pending dispatch.")) {
+                f.current_desk = currentUser.role;
+                f.is_pending = false;
+                f.status = "Recalled back to " + currentUser.role;
+                
+                if (f.outward_logs && f.outward_logs.length > 0) {
+                    const lastLog = f.outward_logs[f.outward_logs.length - 1];
+                    if (lastLog.desk === currentUser.role) {
+                        f.outward_logs.pop(); 
+                    }
+                }
+
+                const dateTime = getCurrentDateTime();
+                if(!f.history) f.history = [];
+                f.history.unshift({date: dateTime, log: "Routing mistake recalled by " + currentUser.role});
+                
+                saveToLocalDatabase();
+                renderFilesTable();
+            }
+        }
+
+        function openEditModal(targetId) {
+            const file = files.find(f => f.id === targetId);
+            if(!file) return;
+            
+            document.getElementById('edit-file-id').value = targetId;
+            
+            const initiatedLog = file.history[file.history.length - 1]?.log || '';
+            const isInitiator = initiatedLog.includes(`Initiated by ${currentUser.role}`);
+            
+            const subjectEl = document.getElementById('edit-subject');
+            const subjectWarning = document.getElementById('edit-subject-warning');
+            subjectEl.value = file.subject;
+            
+            if (isInitiator) {
+                subjectEl.readOnly = false;
+                subjectEl.className = "w-full border border-slate-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none";
+                subjectWarning.classList.add('hidden');
+            } else {
+                subjectEl.readOnly = true;
+                subjectEl.className = "w-full border border-slate-300 p-2 rounded bg-slate-100 text-slate-500 cursor-not-allowed outline-none";
+                subjectWarning.classList.remove('hidden');
+            }
+            
+            const inContainer = document.getElementById('edit-inward-container');
+            inContainer.innerHTML = '<label class="block text-sm font-bold text-slate-700 mb-2 border-b border-slate-200 pb-1">Edit Inward Numbers</label>';
+            for (const [desk, no] of Object.entries(file.inward_nos)) {
+                const safeId = 'edit-inward-' + desk.replace(/\s+/g, '');
+                
+                const canEdit = desk === currentUser.role;
+                const inputClass = canEdit 
+                    ? "flex-1 border border-slate-300 p-1.5 rounded text-sm focus:ring-2 focus:ring-blue-500 bg-white" 
+                    : "flex-1 border border-slate-200 p-1.5 rounded text-sm bg-slate-100 text-slate-500 cursor-not-allowed";
+                const readOnlyAttr = canEdit ? "" : "readonly";
+
+                inContainer.innerHTML += `
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-bold text-slate-500 w-24 truncate" title="${desk}">${desk}</span>
+                        <input type="text" id="${safeId}" data-desk="${desk}" value="${no}" class="${inputClass}" ${readOnlyAttr}>
+                    </div>
+                `;
+            }
+            
+            const outContainer = document.getElementById('edit-outward-container');
+            outContainer.innerHTML = '<label class="block text-sm font-bold text-slate-700 mb-2 border-b border-blue-200 pb-1">Edit Outward Nos & Remarks</label>';
+            if(file.outward_logs && file.outward_logs.length > 0) {
+                file.outward_logs.forEach((log, index) => {
+                    const canEdit = log.desk === currentUser.role;
+                    const inputClass = canEdit 
+                        ? "border border-blue-300 p-1.5 rounded text-sm focus:ring-2 focus:ring-blue-500 bg-white" 
+                        : "border border-blue-100 p-1.5 rounded text-sm bg-slate-100 text-slate-500 cursor-not-allowed";
+                    const readOnlyAttr = canEdit ? "" : "readonly";
+
+                    outContainer.innerHTML += `
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-[10px] font-bold text-slate-500 w-20 leading-tight" title="${log.desk} to ${log.to}">${log.desk} To:<br/>${log.to}</span>
+                            <input type="text" id="edit-outward-${index}" value="${log.no}" placeholder="Outward No." class="${inputClass} w-24" ${readOnlyAttr}>
+                            <input type="text" id="edit-remark-${index}" value="${log.remark || ''}" placeholder="Remarks (e.g. TS Accorded)" class="${inputClass} flex-1" ${readOnlyAttr}>
+                        </div>
+                    `;
+                });
+            } else {
+                outContainer.innerHTML += '<p class="text-xs text-slate-500 italic">No outward numbers logged yet.</p>';
+            }
+            
+            document.getElementById('edit-file-modal').classList.remove('hidden');
+        }
+
+        function saveFileCorrections() {
+            const targetId = document.getElementById('edit-file-id').value;
+            const file = files.find(f => f.id === targetId);
+            if(!file) return;
+            
+            let changesMade = [];
+            
+            const newSubject = document.getElementById('edit-subject').value;
+            if(!document.getElementById('edit-subject').readOnly && file.subject !== newSubject) {
+                file.subject = newSubject;
+                changesMade.push("Subject");
+            }
+            
+            for (const desk of Object.keys(file.inward_nos)) {
+                if (desk === currentUser.role) {
+                    const safeId = 'edit-inward-' + desk.replace(/\s+/g, '');
+                    const input = document.getElementById(safeId);
+                    if (input && input.value.trim() !== file.inward_nos[desk]) {
+                        if (isDuplicateInward(input.value, file.id)) {
+                            alert(`Duplicate Error: The Inward No. "${input.value.trim()}" already exists.`);
+                            return; 
+                        }
+                        file.inward_nos[desk] = input.value.trim();
+                        changesMade.push(`Inward No (${desk})`);
+                    }
+                }
+            }
+            
+            if(file.outward_logs) {
+                for (let i = 0; i < file.outward_logs.length; i++) {
+                    let log = file.outward_logs[i];
+                    if (log.desk === currentUser.role) {
+                        const inputNo = document.getElementById('edit-outward-' + i);
+                        const inputRemark = document.getElementById('edit-remark-' + i); 
+
+                        if (inputNo && inputNo.value.trim() !== log.no) {
+                            if (isDuplicateOutward(inputNo.value, file.id)) {
+                                alert(`Duplicate Error: The Outward No. "${inputNo.value.trim()}" already exists.`);
+                                return;
+                            }
+                            log.no = inputNo.value.trim();
+                            changesMade.push(`Outward No (${log.desk})`);
+                        }
+
+                        if (inputRemark && inputRemark.value.trim() !== (log.remark || '')) {
+                            log.remark = inputRemark.value.trim();
+                            changesMade.push(`Remark (${log.desk})`);
+                        }
+                    }
+                }
+            }
+            
+            if(changesMade.length > 0) {
+                const dateTime = getCurrentDateTime();
+                if(!file.history) file.history = [];
+                file.history.unshift({ date: dateTime, log: `Data corrected by ${currentUser.role}: Updates made to ${changesMade.join(', ')}.` });
+                saveToLocalDatabase();
+            }
+            
+            closeModal('edit-file-modal');
+            renderFilesTable();
+        }
+
+        function acceptFile(targetId) {
+            const fileIndex = files.findIndex(f => f.id === targetId);
+            if (fileIndex === -1) return;
+
+            const myInwardNo = prompt("Enter your section's Inward No. to officially receive this file:");
+            
+            if (myInwardNo === null || myInwardNo.trim() === "") {
+                alert("You must enter an Inward No. to accept and unlock the file.");
+                return; 
+            }
+
+            if (isDuplicateInward(myInwardNo)) {
+                alert(`Duplicate Error: The Inward No. "${myInwardNo.trim()}" is already registered in the system.`);
+                return;
+            }
+
+            const dateTime = getCurrentDateTime();
+            const justDate = dateTime.split(' ')[0];
+            const sender = files[fileIndex].sender_desk;
+
+            files[fileIndex].is_pending = false;
+            
+            let markText = '';
+            if (currentUser.role === 'Admin') markText = ' and marked to EE II';
+            else if (currentUser.role === 'Sub Division I') markText = ' and marked to AE I';
+            else if (currentUser.role === 'Sub Division II') markText = ' and marked to AE II';
+            else if (currentUser.role === 'Sub Division III') markText = ' and marked to AE III';
+
+            let newStatusText = `File received from ${sender} on ${justDate}${markText}`;
+            files[fileIndex].status = newStatusText;
+            
+            files[fileIndex].inward_nos[currentUser.role] = myInwardNo.trim();
+            
+            let historyLogText = `Physical file Accepted by ${currentUser.role} (Registered as Inward No: ${myInwardNo.trim()})`;
+            if (markText !== '') {
+                historyLogText += markText.replace(' and', ' &');
+            }
+
+            if(!files[fileIndex].history) files[fileIndex].history = [];
+            files[fileIndex].history.unshift({ date: dateTime, log: historyLogText });
+
+            saveToLocalDatabase();
+            renderFilesTable();
+        }
+
+        function acceptLetter(targetLetterNo) {
+            const letterIndex = letters.findIndex(l => l.letter_no === targetLetterNo);
+            if (letterIndex === -1) return;
+
+            const dateTime = getCurrentDateTime();
+            const justDate = dateTime.split(' ')[0];
+
+            letters[letterIndex].is_pending = false;
+            letters[letterIndex].status = `Received by ${currentUser.role} on ${justDate}`;
+
+            saveToLocalDatabase();
+            renderLettersTable();
+        }
+
+        function viewHistory(targetId) {
+            const file = files.find(f => f.id === targetId);
+            if (!file) return;
+
+            let inwardHtml = '';
+            for (const [desk, no] of Object.entries(file.inward_nos)) {
+                let shortDesk = desk.replace('Sub Division', 'SD').replace('Technical', 'Tech').replace('Accounts', 'Acc');
+                inwardHtml += `<div class="mb-1"><span class="text-xs uppercase text-slate-400 font-bold">${shortDesk}:</span> ${no}</div>`;
+            }
+            document.getElementById('history-inward-nos').innerHTML = inwardHtml || '<span class="text-slate-400 text-xs">-</span>';
+
+            let outwardHtml = '';
+            if (file.outward_logs && file.outward_logs.length > 0) {
+                file.outward_logs.forEach(log => {
+                    let shortDesk = log.desk.replace('Sub Division', 'SD').replace('Technical', 'Tech').replace('Accounts', 'Acc');
+                    outwardHtml += `<div class="mb-1"><span class="text-xs uppercase text-slate-400 font-bold">${shortDesk}:</span> ${log.no} <span class="text-[10px] text-slate-400">(${log.remark || 'No remark'})</span></div>`;
+                });
+            }
+            document.getElementById('history-outward-nos').innerHTML = outwardHtml || '<span class="text-slate-400 text-xs">-</span>';
+
+            document.getElementById('history-subject').innerText = file.subject;
+            
+            const timeline = document.getElementById('history-timeline');
+            timeline.innerHTML = ''; 
+
+            if(file.history && file.history.length > 0) {
+                file.history.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'mb-4 ml-4 relative';
+                    li.innerHTML = `
+                        <div class="absolute w-3 h-3 bg-blue-500 rounded-full mt-1.5 -left-[1.35rem] border border-white"></div>
+                        <time class="mb-1 text-xs font-normal leading-none text-slate-400">${item.date}</time>
+                        <p class="text-sm font-semibold text-slate-700">${item.log}</p>
+                    `;
+                    timeline.appendChild(li);
+                });
+            } else {
+                timeline.innerHTML = '<p class="text-sm text-slate-500 italic">No history available for this file.</p>';
+            }
+
+            document.getElementById('history-modal').classList.remove('hidden');
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            const today = getTodayDateString();
+            
+            if (modalId === 'new-file-modal') {
+                const dateInput = document.getElementById('manual-date');
+                dateInput.value = today;
+                dateInput.min = today; 
+                
+                let prefix = 'WRD/';
+                if (currentUser.role === 'Sub Division I') prefix += 'SUB1/';
+                else if (currentUser.role === 'Sub Division II') prefix += 'SUB2/';
+                else if (currentUser.role === 'Sub Division III') prefix += 'SUB3/';
+                else if (currentUser.role === 'Admin') prefix += 'ADM/';
+                else if (currentUser.role === 'Technical') prefix += 'TECH/';
+                else if (currentUser.role === 'Accounts') prefix += 'ACC/';
+                
+                document.getElementById('manual-inward-no').value = prefix;
+            } 
+            else if (modalId === 'new-letter-modal') {
+                const dateInput = document.getElementById('letter-date');
+                dateInput.value = today;
+                dateInput.min = today; 
+                
+                document.getElementById('letter-no').value = 'WRD/';
+                toggleLetterManualInput(document.getElementById('letter-to-select'));
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            if (modalId === 'new-file-modal') document.getElementById('new-file-form').reset();
+            if (modalId === 'new-letter-modal') document.getElementById('new-letter-form').reset();
+            if (modalId === 'edit-file-modal') document.getElementById('edit-file-id').value = '';
+        }
+
+        function submitNewFile() {
+            const fileDate = document.getElementById('manual-date').value;
+            const inwardNo = document.getElementById('manual-inward-no').value;
+            const subject = document.getElementById('manual-subject').value;
+            const dateTime = getCurrentDateTime();
+            const today = getTodayDateString();
+            
+            if (fileDate < today) {
+                alert("Backdating is strictly prohibited. Please select today's date.");
+                document.getElementById('manual-date').value = today;
+                return;
+            }
+
+            if (isDuplicateInward(inwardNo)) {
+                alert(`Duplicate Error: The Inward No. "${inwardNo.trim()}" is already registered in the system.`);
+                return;
+            }
+            
+            if (fileDate && inwardNo && subject) {
+                const startingDesk = currentUser.role;
+                
+                let initialStatus = 'Inwarded on ' + fileDate;
+                if (startingDesk === 'Admin') initialStatus = 'Inwarded & Marked to EE II on ' + fileDate;
+                else if (startingDesk === 'Sub Division I') initialStatus = 'Inwarded & Marked to AE I on ' + fileDate;
+                else if (startingDesk === 'Sub Division II') initialStatus = 'Inwarded & Marked to AE II on ' + fileDate;
+                else if (startingDesk === 'Sub Division III') initialStatus = 'Inwarded & Marked to AE III on ' + fileDate;
+
+                let initialInwardNos = {};
+                initialInwardNos[startingDesk] = inwardNo.trim();
+
+                files.unshift({
+                    id: 'F' + Date.now().toString(), 
+                    inward_nos: initialInwardNos,    
+                    outward_logs: [],
+                    inward_date: fileDate,
+                    subject: subject,
+                    current_desk: startingDesk,
+                    status: initialStatus,
+                    is_pending: false,
+                    sender_desk: '',
+                    history: [{ date: dateTime, log: initialStatus + ` (Initiated by ${startingDesk} as ${inwardNo.trim()})` }]
+                });
+                
+                saveToLocalDatabase();
+                closeModal('new-file-modal'); 
+                document.getElementById('search-input-files').value = '';
+                renderFilesTable(); 
+            }
+        }
+
+        function submitNewLetter() {
+            const letterDate = document.getElementById('letter-date').value;
+            const letterNo = document.getElementById('letter-no').value;
+            let addressedTo = document.getElementById('letter-to-select').value;
+            const subject = document.getElementById('letter-subject').value;
+            const today = getTodayDateString();
+            
+            if (letterDate < today) {
+                alert("Backdating is strictly prohibited. Please select today's date.");
+                document.getElementById('letter-date').value = today;
+                return;
+            }
+
+            if (isDuplicateLetterNo(letterNo)) {
+                alert(`Duplicate Error: The Letter/Ref No. "${letterNo.trim()}" is already registered in the system.`);
+                return;
+            }
+
+            if (addressedTo === 'External') {
+                addressedTo = document.getElementById('letter-to-manual').value.trim();
+            }
+
+            if (letterDate && letterNo && addressedTo && subject) {
+                
+                const coreDesks = ['Technical', 'Admin', 'Accounts', 'Sub Division I', 'Sub Division II', 'Sub Division III'];
+                const isInternal = coreDesks.includes(addressedTo);
+
+                let isPending = false;
+                let receiverDesk = '';
+                let finalStatus = '';
+
+                if (isInternal) {
+                    isPending = true;
+                    receiverDesk = addressedTo;
+                    finalStatus = 'In Transit to ' + addressedTo;
+                } else {
+                    isPending = false;
+                    receiverDesk = '';
+                    finalStatus = 'Dispatched to ' + addressedTo;
+                }
+
+                letters.unshift({
+                    letter_no: letterNo,
+                    date: letterDate,
+                    addressed_to: addressedTo,
+                    subject: subject,
+                    dispatched_by: currentUser.role,
+                    is_pending: isPending,
+                    receiver_desk: receiverDesk,
+                    status: finalStatus
+                });
+                
+                saveToLocalDatabase();
+                closeModal('new-letter-modal'); 
+                document.getElementById('search-input-letters').value = '';
+                renderLettersTable(); 
+            }
+        }
+    </script>
+</body>
+</html>

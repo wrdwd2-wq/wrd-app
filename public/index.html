@@ -425,23 +425,19 @@
                 const user = document.getElementById('username').value.toLowerCase();
                 const pass = document.getElementById('password').value;
                 const errorDiv = document.getElementById('login-error');
+                                }
 
-                if (pass !== 'p') {
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-
-                if (user === 'ee') currentUser = { name: 'Executive Engineer', role: 'Executive' };
-                else if (user === 'tech') currentUser = { name: 'Smt. Vidhi. Dessai', role: 'Technical' };
-                else if (user === 'admin') currentUser = { name: 'Smt. Cheryl Fernandes', role: 'Admin' };
-                else if (user === 'acc') currentUser = { name: 'Smt. Anuja Chindarkar', role: 'Accounts' };
-                else if (user === 'sub1') currentUser = { name: 'Sub Div I Officer', role: 'Sub Division I' };
-                else if (user === 'sub2') currentUser = { name: 'Sub Div II Officer', role: 'Sub Division II' };
-                else if (user === 'sub3') currentUser = { name: 'Sub Div III Officer', role: 'Sub Division III' };
-                else {
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
+                if (user === 'ee' && pass === 'ee@123') currentUser = { name: 'Executive Engineer', role: 'Executive' };
+else if (user === 'tech' && pass === 'tech@123') currentUser = { name: 'Smt. Vidhi. Dessai', role: 'Technical' };
+else if (user === 'admin' && pass === 'admin@123') currentUser = { name: 'Smt. Cheryl Fernandes', role: 'Admin' };
+else if (user === 'acc' && pass === 'accounts@123') currentUser = { name: 'Smt. Anuja Chindarkar', role: 'Accounts' };
+else if (user === 'sub1' && pass === 'sub1@123') currentUser = { name: 'Sub Div I Officer', role: 'Sub Division I' };
+else if (user === 'sub2' && pass === 'sub2@123') currentUser = { name: 'Sub Div II Officer', role: 'Sub Division II' };
+else if (user === 'sub3' && pass === 'sub3@123') currentUser = { name: 'Sub Div III Officer', role: 'Sub Division III' };
+else {
+    errorDiv.classList.remove('hidden');
+    return;
+}
 
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('login-screen').classList.remove('flex');

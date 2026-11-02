@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Works Division II, WRD - File Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; }
         
@@ -348,43 +349,23 @@
         let letters = [];
         let currentTab = 'files';
 
-        function initLocalDatabase() {
-            const savedFiles = localStorage.getItem('wrd_files_demo_v19'); 
-            const savedLetters = localStorage.getItem('wrd_letters_demo_v8'); 
+        const _supabase = supabase.createClient('https://zlcdhtkymqpmftqtanmr.supabase.co/rest/v1/', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsY2RodGt5bXFwbWZ0cXRhbm1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM1OTI5MDEsImV4cCI6MjEwOTE2ODkwMX0.FXj0RlDVBLN3jfqzL66tlhTAiVuR60xHxNwlnQkHUQ0');
 
-            if (savedFiles) {
-                files = JSON.parse(savedFiles);
-            } else {
-                files = [
-                    { 
-                        id: 'F1690000001',
-                        inward_nos: { 'Sub Division I': 'WRD/SUB1/2026/012', 'Technical': 'WRD/TECH/2026/102' },
-                        outward_logs: [
-                            { desk: 'Sub Division I', date: '2026-10-28', no: 'OUT/SD1/45', to: 'Technical', remark: 'Forwarded for TS check' }
-                        ],
-                        inward_date: '2026-10-28', subject: 'Pump House Maintenance Estimate', 
-                        current_desk: 'Technical', status: 'File received from Sub Division I on 2026-10-28', 
-                        is_pending: false, sender_desk: '', 
-                        history: [
-                            { date: '2026-10-28 10:45', log: 'Physical file Accepted by Technical (Registered as Inward No: WRD/TECH/2026/102)' },
-                            { date: '2026-10-28 10:30', log: 'Dispatched internally to Technical by Sub Division I (Outward No: OUT/SD1/45, Remarks: Forwarded for TS check)' },
-                            { date: '2026-10-28 10:15', log: 'Inwarded & Marked to AE I (Initiated by Sub Division I as WRD/SUB1/2026/012)' }
-                        ] 
-                    }
-                ];
-            }
-            if (savedLetters) {
-                letters = JSON.parse(savedLetters);
-            } else {
-                letters = [];
-            }
-            saveToLocalDatabase();
-        }
+async function initLocalDatabase() {
+    const savedLetters = localStorage.getItem('wrd_letters_demo_v8'); 
+    letters = savedLetters ? JSON.parse(savedLetters) : [];
+    
+    const { data, error } = await _supabase.from('wrd_files').select('*');
+    files = data && data.length > 0 ? data : [];
+    renderFilesTable();
+}
 
-        function saveToLocalDatabase() {
-            localStorage.setItem('wrd_files_demo_v19', JSON.stringify(files));
-            localStorage.setItem('wrd_letters_demo_v8', JSON.stringify(letters));
-        }
+async function saveToLocalDatabase() {
+    localStorage.setItem('wrd_letters_demo_v8', JSON.stringify(letters));
+    if (files.length > 0) {
+        await _supabase.from('wrd_files').upsert(files);
+    }
+}
 
         // --- GLOBAL DUPLICATE CHECKERS ---
         function isDuplicateInward(no, excludeFileId = null) {
@@ -488,7 +469,7 @@ else if (user === 'accounts' && pass === 'accounts@123') currentUser = { name: '
                 document.getElementById('search-input-letters').value = '';
 
                 switchView('files');
-                initLocalDatabase();
+                await initLocalDatabase();
                 renderFilesTable();
                 renderLettersTable();
             } catch (err) {

@@ -529,14 +529,16 @@
                     if (tableId === 'files-table' && rows[0].querySelectorAll('th')[j] && rows[0].querySelectorAll('th')[j].innerText === 'Action') continue; 
                     if (tableId === 'letters-table' && rows[0].querySelectorAll('th')[j] && rows[0].querySelectorAll('th')[j].innerText.includes('Action')) continue;
                     
-                    let data = cols[j].innerText.replace(/"/g, '""'); 
+                    // Replace double quotes for safety and flatten multiple lines (like stacked Inward Nos) with a " | " separator
+                    let data = cols[j].innerText.replace(/"/g, '""').replace(/\r?\n|\r/g, ' | '); 
                     row.push('"' + data + '"');
                 }
                 csv.push(row.join(','));
             }
 
             const csvString = csv.join('\n');
-            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            // Add the UTF-8 BOM (\ufeff) so Microsoft Excel formats the columns perfectly
+            const blob = new Blob(['\ufeff' + csvString], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.setAttribute('download', filename);

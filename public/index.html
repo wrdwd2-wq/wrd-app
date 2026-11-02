@@ -349,7 +349,7 @@
         let letters = [];
         let currentTab = 'files';
 
-        const _supabase = supabase.createClient('https://zlcdhtkymqpmftqtanmr.supabase.co/rest/v1/', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsY2RodGt5bXFwbWZ0cXRhbm1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM1OTI5MDEsImV4cCI6MjEwOTE2ODkwMX0.FXj0RlDVBLN3jfqzL66tlhTAiVuR60xHxNwlnQkHUQ0');
+        const _supabase = supabase.createClient('https://zlcdhtkymqpmftqtanmr.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsY2RodGt5bXFwbWZ0cXRhbm1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM1OTI5MDEsImV4cCI6MjEwOTE2ODkwMX0.FXj0RlDVBLN3jfqzL66tlhTAiVuR60xHxNwlnQkHUQ0');
 
 async function initLocalDatabase() {
     const savedLetters = localStorage.getItem('wrd_letters_demo_v8'); 
@@ -425,7 +425,7 @@ async function saveToLocalDatabase() {
             }
         }
 
-        function handleLogin() {
+        async function handleLogin() {
             try {
                 const user = document.getElementById('username').value.toLowerCase();
                 const pass = document.getElementById('password').value;
